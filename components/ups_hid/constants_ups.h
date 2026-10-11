@@ -248,6 +248,7 @@ namespace usb {
     // Common vendor IDs
     static constexpr uint16_t VENDOR_ID_APC = 0x051D;
     static constexpr uint16_t VENDOR_ID_CYBERPOWER = 0x0764;
+    static constexpr uint16_t VENDOR_ID_TRIPPLITE = 0x09AE;
     
     // Common product IDs
     static constexpr uint16_t PRODUCT_ID_APC_BACK_UPS_ES_700 = 0x0002; // Back-UPS ES 700G (INPUT-ONLY)

@@ -23,6 +23,7 @@ struct DeviceInfo {
     PROTOCOL_UNKNOWN = 0,
     PROTOCOL_APC_HID,
     PROTOCOL_CYBERPOWER_HID,
+    PROTOCOL_TRIPPLITE_HID,
     PROTOCOL_GENERIC_HID
   };
   
@@ -59,6 +60,7 @@ struct DeviceInfo {
     switch (detected_protocol) {
       case PROTOCOL_APC_HID: return "APC HID";
       case PROTOCOL_CYBERPOWER_HID: return "CyberPower HID";
+      case PROTOCOL_TRIPPLITE_HID: return "Tripp Lite HID";
       case PROTOCOL_GENERIC_HID: return "Generic HID";
       default: return "Unknown";
     }
