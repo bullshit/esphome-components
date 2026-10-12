@@ -17,6 +17,7 @@ body:
       options:
         - APC HID Protocol
         - CyberPower Protocol
+        - Tripp Lite HID Protocol
         - Generic HID Protocol
         - Unknown/Not Sure
     validations:

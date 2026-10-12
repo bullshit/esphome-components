@@ -50,7 +50,7 @@ bool GenericHidProtocol::detect() {
   
   // Check if this is a known vendor that should use a specific protocol
   uint16_t vid = parent_->get_vendor_id();
-  if (vid == usb::VENDOR_ID_APC || vid == usb::VENDOR_ID_CYBERPOWER) { // APC or CyberPower
+  if (vid == usb::VENDOR_ID_APC || vid == usb::VENDOR_ID_CYBERPOWER || vid == usb::VENDOR_ID_TRIPPLITE) {
     ESP_LOGD(GEN_TAG, "Known vendor 0x%04X should use specific protocol", vid);
     return false;
   }

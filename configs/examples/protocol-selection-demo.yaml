@@ -33,7 +33,8 @@ ups_hid:
   # Protocol Options (uncomment one to test):
   protocol: auto              # Default: Auto-detect based on USB vendor ID
   # protocol: apc             # Force APC HID Protocol
-  # protocol: cyberpower      # Force CyberPower HID Protocol  
+  # protocol: cyberpower      # Force CyberPower HID Protocol
+  # protocol: tripplite       # Force Tripp Lite HID Protocol
   # protocol: generic         # Force Generic HID Protocol
 
 # Platform stubs for compilation

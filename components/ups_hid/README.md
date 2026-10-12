@@ -1,6 +1,6 @@
 # UPS HID Component for ESPHome
 
-A ESPHome component for monitoring UPS devices via USB connection on ESP32-S3. Direct USB HID communication with support for APC, CyberPower, and generic HID UPS devices.
+A ESPHome component for monitoring UPS devices via USB connection on ESP32-S3. Direct USB HID communication with support for APC, CyberPower, Tripp Lite, and generic HID UPS devices.
 
 ## Features
 
@@ -10,7 +10,7 @@ A ESPHome component for monitoring UPS devices via USB connection on ESP32-S3. D
 - ⏱️ **Delay configuration**: Configure UPS shutdown, start, and reboot delays via USB HID
 - 🌈 **Visual status indicator**: RGB LED with customizable status colors
 - 🏠 **Home Assistant integration**: Automatic entity discovery via ESPHome API
-- 🔌 **Multi-protocol support**: APC HID, CyberPower HID, Generic HID
+- 🔌 **Multi-protocol support**: APC HID, CyberPower HID, Tripp Lite HID, Generic HID
 - 🎯 **Auto-detection**: Intelligent protocol detection based on USB vendor IDs
 - 🔧 **Robust USB handling**: ESP-IDF v5.4 compatible with 3-tier reconnection recovery
 - 🧪 **Simulation mode**: Test integration without physical UPS device
@@ -68,13 +68,14 @@ UPS USB Port (Type-B)  ←→  USB Cable  ←→  ESP32-S3 USB OTG Port
 |--------|--------|----------|-----------|----------------|
 | **APC** | Back-UPS ES Series, Smart-UPS | APC HID | 0x051D | ✅ Confirmed |
 | **CyberPower** | CP1500EPFCLCD, CP1000PFCLCD | CyberPower HID | 0x0764 | ✅ Confirmed |
-| **Tripp Lite** | SMART1500LCDT, UPS series | Generic HID | 0x09AE | ⚠️ Limited |
+| **Tripp Lite** | SMART1500LCD (09AE:2009) | Tripp Lite HID | 0x09AE | — Read only |
 | **Eaton/MGE** | Ellipse, Evolution series | Generic HID | 0x06DA | ⚠️ Limited |
 | **Belkin** | Older USB UPS models | Generic HID | 0x050D | ⚠️ Limited |
 
 **Beeper Control Legend:**
 - ✅ **Confirmed**: Full beeper control tested and working (enable/disable/mute/test)
 - ⚠️ **Limited**: Basic support via generic HID (device-dependent functionality)
+- — **Read only**: Protocol does not implement beeper writes
 
 ### Protocol Compatibility Matrix
 
@@ -82,6 +83,7 @@ UPS USB Port (Type-B)  ←→  USB Cable  ←→  ESP32-S3 USB OTG Port
 |----------|---------------|----------------|---------------|----------------|
 | **APC HID** | USB HID reports | ✅ | Battery, voltage, status | ✅ Beeper control |
 | **CyberPower HID** | Vendor-specific HID | ✅ | Extended sensors, config | ✅ Beeper control |
+| **Tripp Lite HID** | Vendor-specific HID | ✅ | Battery, voltage, runtime, frequency | — Read only |
 | **Generic HID** | Standard HID-PDC | ✅ | Basic monitoring | ⚠️ Limited writes |
 
 ## Configuration Reference
@@ -102,7 +104,7 @@ UPS USB Port (Type-B)  ←→  USB Cable  ←→  ESP32-S3 USB OTG Port
 ups_hid:
   id: ups_monitor                # Required component ID
   update_interval: 30s           # Polling interval (5s-60s)
-  protocol: auto                 # Protocol: auto, apc, cyberpower, generic
+  protocol: auto                 # Protocol: auto, apc, cyberpower, tripplite, generic
   simulation_mode: false         # Testing without UPS hardware
 ```
 
@@ -130,7 +132,8 @@ You can now manually select which UPS protocol to use instead of relying on auto
 ups_hid:
   protocol: auto                 # Default: automatic selection based on USB vendor ID
   # protocol: apc                # Force APC HID protocol
-  # protocol: cyberpower         # Force CyberPower HID protocol  
+  # protocol: cyberpower         # Force CyberPower HID protocol
+  # protocol: tripplite         # Force Tripp Lite HID protocol
   # protocol: generic            # Force Generic HID protocol
 ```
 
@@ -139,6 +142,7 @@ ups_hid:
 - **`auto`** (default): Automatically select protocol based on USB vendor ID
   - APC devices (0x051D): Uses APC HID Protocol
   - CyberPower (0x0764): Uses CyberPower HID Protocol
+  - Tripp Lite (0x09AE): Uses Tripp Lite HID Protocol
   - Unknown devices: Falls back to Generic HID Protocol
 
 - **`apc`**: Force APC HID Protocol
@@ -150,6 +154,12 @@ ups_hid:
   - Use for CyberPower CP series devices
   - Enhanced sensor support with 12+ additional sensors
   - Runtime scaling and advanced thresholds
+
+- **`tripplite`**: Force Tripp Lite HID Protocol
+  - Use for Tripp Lite Smart LCD devices (vendor 0x09AE)
+  - Battery level, runtime, input voltage, battery voltage, frequency, and status bits
+  - Output voltage and load percentage are reported by some Smart LCD units (report map from 09AE:2012) and are absent on SMART1500LCD 09AE:2009
+  - Read only: beeper, delay, and test writes are not implemented
 
 - **`generic`**: Force Generic HID Protocol
   - Universal fallback for unknown UPS brands
@@ -220,6 +230,7 @@ logger:
     ups_hid: DEBUG
     ups_hid.apc: DEBUG
     ups_hid.cyberpower: DEBUG
+    ups_hid.tripplite: DEBUG
 ```
 
 **Normal Operation**: Protocol detection < 500ms, consistent update intervals

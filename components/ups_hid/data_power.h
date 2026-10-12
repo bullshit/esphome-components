@@ -26,6 +26,7 @@ struct PowerData {
   
   // Power status information
   std::string status{};                // Power status text (Online, On Battery, etc.)
+  bool overload{false};                // Converter PresentStatus overload bit
   
   // Power quality indicators
   bool input_voltage_valid() const {
@@ -47,7 +48,7 @@ struct PowerData {
   }
   
   bool is_overloaded() const {
-    return !std::isnan(load_percent) && load_percent > 95.0f;
+    return overload || (!std::isnan(load_percent) && load_percent > 95.0f);
   }
   
   bool has_load_info() const {

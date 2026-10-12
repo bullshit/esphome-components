@@ -30,7 +30,8 @@ Core monitoring sensors (5 sensors) available on all protocols:
 - **Binary Sensors**: `charging`, `overload`
 - **System Monitoring**: uptime, WiFi signal, IP address, ESPHome version
 - **Grouped version** organizes entities into logical sections in ESPHome web interface
-- Compatible with APC, CyberPower, and Generic protocols
+- Compatible with APC, CyberPower, Tripp Lite, and Generic protocols
+- Tripp Lite SMART1500LCD (09AE:2009) does not report `output_voltage` or `load_percent`
 
 ### **Optional Enhancement Packages**
 
@@ -166,6 +167,12 @@ CyberPower CP1500 series optimizations:
 - **Enhanced power calculation**: Uses HID nominal power when available (900W default)
 - **Device-specific text sensor**: `battery_mfr_date` (separate from UPS date)
 - Rich monitoring script with comprehensive status logging
+
+#### Tripp Lite Smart LCD (`protocol: tripplite`)
+Select with `protocol: tripplite` or leave `protocol: auto` (vendor 0x09AE):
+- Confirmed on SMART1500LCD (09AE:2009): battery level, runtime, input voltage, battery voltage, frequency, charging, overload
+- Output voltage (`0x1B`) and load percentage (`0x1E`) are in the report map used by some Smart LCD units (09AE:2012) and are not present on 09AE:2009
+- Read only: beeper, delay, and test controls are not implemented
 
 ---
 
@@ -409,7 +416,8 @@ substitutions:
 
 ### 4. **Device-Specific Optimization**
 - **APC devices**: Use slower update intervals (15-30s)
-- **CyberPower devices**: Can handle faster updates (5-10s)  
+- **CyberPower devices**: Can handle faster updates (5-10s)
+- **Tripp Lite Smart LCD**: 30s polling is enough; 09AE:2009 does not report output voltage or load
 - **Generic devices**: Start conservative (30s) and adjust
 
 ### 5. **Choose Entity Layout**

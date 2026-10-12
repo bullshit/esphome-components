@@ -347,6 +347,11 @@ void UpsHidComponent::update_sensors() {
       state = false; // Opposite of online
     } else if (type == binary_sensor_type::LOW_BATTERY) {
       state = ups_data_.battery.is_low();
+    } else if (type == binary_sensor_type::CHARGING) {
+      state = ups_data_.battery.status == battery_status::CHARGING ||
+              ups_data_.battery.status.rfind(battery_status::CHARGING, 0) == 0;
+    } else if (type == binary_sensor_type::OVERLOAD) {
+      state = ups_data_.power.is_overloaded();
     }
     
     sensor->publish_state(state);

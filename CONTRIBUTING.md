@@ -94,7 +94,7 @@ If you prefer manual collection, the issue template provides detailed instructio
 
 ### Adding New Protocols
 
-1. **Study existing protocols**: Review `apc_hid_protocol.cpp` or `cyberpower_protocol.cpp`
+1. **Study existing protocols**: Review `protocol_apc.cpp`, `protocol_cyberpower.cpp`, or `protocol_tripplite.cpp`
 2. **Use the protocol base class**: Inherit from `UpsProtocolBase`
 3. **Register your protocol**: Use the `REGISTER_UPS_PROTOCOL_FOR_VENDOR` macro
 4. **Follow patterns**: Match existing code style and error handling

@@ -6,11 +6,11 @@ A collection of ESPHome components for various hardware integrations and monitor
 
 ### 🔋 UPS HID Component (`ups_hid`)
 
-Monitor UPS devices via direct USB connection on ESP32-S3. Supports APC, CyberPower, and generic HID UPS devices with real-time monitoring of battery status, power conditions, and device information.
+Monitor UPS devices via direct USB connection on ESP32-S3. Supports APC, CyberPower, Tripp Lite, and generic HID UPS devices with real-time monitoring of battery status, power conditions, and device information.
 
 **Key Features:**
 - **Real-time UPS monitoring**: Battery, voltage, load, runtime, and 15+ sensors
-- **Multi-protocol support**: APC HID, CyberPower HID, Generic HID with auto-detection
+- **Multi-protocol support**: APC HID, CyberPower HID, Tripp Lite HID, Generic HID with auto-detection
 - **UPS Control**: Beeper control (enable/disable/mute/test) and battery testing
 - ⏱️ **Delay configuration**: Configure UPS shutdown, start, and reboot delays via USB HID
 - **Home Assistant integration**: Full device discovery and management
