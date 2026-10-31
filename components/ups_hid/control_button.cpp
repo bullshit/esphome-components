@@ -1,3 +1,5 @@
+#include "esphome/core/defines.h"
+#ifdef USE_BUTTON
 #include "control_button.h"
 #include "constants_ups.h"
 #include "esphome/core/log.h"
@@ -97,3 +99,4 @@ void UpsHidButton::press_action() {
 
 }  // namespace ups_hid
 }  // namespace esphome
+#endif  // USE_BUTTON

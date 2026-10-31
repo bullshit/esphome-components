@@ -1,4 +1,6 @@
 #pragma once
+#include "esphome/core/defines.h"
+#ifdef USE_NUMBER
 
 #include "esphome/core/component.h"
 #include "esphome/components/number/number.h"
@@ -36,3 +38,4 @@ class UpsDelayNumber : public number::Number, public Component {
 
 }  // namespace ups_hid
 }  // namespace esphome
+#endif  // USE_NUMBER

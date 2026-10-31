@@ -23,7 +23,8 @@ struct DeviceInfo {
     PROTOCOL_UNKNOWN = 0,
     PROTOCOL_APC_HID,
     PROTOCOL_CYBERPOWER_HID,
-    PROTOCOL_GENERIC_HID
+    PROTOCOL_GENERIC_HID,
+    PROTOCOL_EATON_HID
   };
   
   DetectedProtocol detected_protocol{PROTOCOL_UNKNOWN};
@@ -60,6 +61,7 @@ struct DeviceInfo {
       case PROTOCOL_APC_HID: return "APC HID";
       case PROTOCOL_CYBERPOWER_HID: return "CyberPower HID";
       case PROTOCOL_GENERIC_HID: return "Generic HID";
+      case PROTOCOL_EATON_HID: return "Eaton/MGE HID";
       default: return "Unknown";
     }
   }

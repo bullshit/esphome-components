@@ -73,7 +73,7 @@ void NutServerComponent::dump_config() {
 bool NutServerComponent::start_server() {
 #ifdef USE_ESP32
   // Create server socket
-  server_socket_ = socket(AF_INET, SOCK_STREAM, 0);
+  server_socket_ = ::socket(AF_INET, SOCK_STREAM, 0);
   if (server_socket_ < 0) {
     ESP_LOGE(TAG, "Failed to create socket: %d", errno);
     return false;

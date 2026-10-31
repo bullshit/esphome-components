@@ -2,6 +2,8 @@
 #include "constants_ups.h"
 #include "esphome/core/log.h"
 #include "esphome/core/helpers.h"
+#include "esphome/core/application.h"
+#include "esphome/core/hal.h"
 
 #ifdef USE_ESP32
 
@@ -403,6 +405,124 @@ esp_err_t Esp32UsbTransport::get_string_descriptor(uint8_t string_index,
         ESP_LOGW(ESP32_USB_TAG, "Failed to submit string descriptor request: %s", esp_err_to_name(ret));
     }
     
+    vSemaphoreDelete(done_sem);
+    usb_host_transfer_free(transfer);
+    return ret;
+}
+
+esp_err_t Esp32UsbTransport::get_report_descriptor(std::vector<uint8_t>& result) {
+    result.clear();
+    if (!device_.dev_hdl) {
+        set_last_error("USB device not ready");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // Find the report descriptor length in the HID class descriptor (0x21)
+    // that follows our interface descriptor in the configuration descriptor.
+    uint16_t desc_len = 0;
+    const usb_config_desc_t *config_desc = nullptr;
+    if (usb_host_get_active_config_descriptor(device_.dev_hdl, &config_desc) == ESP_OK && config_desc) {
+        const uint8_t *p = reinterpret_cast<const uint8_t *>(config_desc);
+        size_t total = config_desc->wTotalLength;
+        bool in_interface = false;
+        for (size_t pos = 0; pos + 2 <= total && p[pos] >= 2; pos += p[pos]) {
+            uint8_t type = p[pos + 1];
+            if (type == USB_B_DESCRIPTOR_TYPE_INTERFACE && pos + 3 <= total) {
+                in_interface = p[pos + 2] == device_.interface_num;
+            } else if (in_interface && type == 0x21 && p[pos] >= 9 && pos + 9 <= total) {
+                uint8_t num = p[pos + 5];
+                for (uint8_t i = 0; i < num && pos + 9 + 3 * i <= total && 6 + 3 * i + 2 < p[pos]; i++) {
+                    if (p[pos + 6 + 3 * i] == 0x22) {
+                        desc_len = p[pos + 7 + 3 * i] | (p[pos + 8 + 3 * i] << 8);
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    if (desc_len == 0 || desc_len > 4096) {
+        ESP_LOGW(ESP32_USB_TAG, "HID report descriptor length unknown (%u), using 2048", desc_len);
+        desc_len = 2048;
+    }
+
+    // Control IN data stage must be a multiple of the EP0 max packet size.
+    size_t data_len = (desc_len + 63) & ~static_cast<size_t>(63);
+    usb_transfer_t *transfer = nullptr;
+    esp_err_t ret = usb_host_transfer_alloc(sizeof(usb_setup_packet_t) + data_len, 0, &transfer);
+    if (ret != ESP_OK) {
+        set_last_error("Failed to allocate report descriptor transfer: " + std::string(esp_err_to_name(ret)));
+        return ret;
+    }
+
+    transfer->device_handle = device_.dev_hdl;
+    transfer->bEndpointAddress = 0;
+    transfer->num_bytes = sizeof(usb_setup_packet_t) + data_len;
+    transfer->timeout_ms = timing::USB_CONTROL_TRANSFER_TIMEOUT_MS;
+
+    usb_setup_packet_t *setup = (usb_setup_packet_t *) transfer->data_buffer;
+    setup->bmRequestType = USB_BM_REQUEST_TYPE_DIR_IN | USB_BM_REQUEST_TYPE_TYPE_STANDARD |
+                           USB_BM_REQUEST_TYPE_RECIP_INTERFACE;
+    setup->bRequest = USB_B_REQUEST_GET_DESCRIPTOR;
+    setup->wValue = 0x22 << 8;  // HID report descriptor
+    setup->wIndex = device_.interface_num;
+    setup->wLength = desc_len;
+
+    SemaphoreHandle_t done_sem = xSemaphoreCreateBinary();
+    if (!done_sem) {
+        usb_host_transfer_free(transfer);
+        return ESP_ERR_NO_MEM;
+    }
+    struct {
+        SemaphoreHandle_t sem;
+        esp_err_t result;
+        size_t actual_bytes;
+    } ctx = {done_sem, ESP_ERR_TIMEOUT, 0};
+    transfer->context = &ctx;
+    transfer->callback = [](usb_transfer_t *t) {
+        auto *c = static_cast<decltype(ctx) *>(t->context);
+        c->result = (t->status == USB_TRANSFER_STATUS_COMPLETED) ? ESP_OK : ESP_FAIL;
+        c->actual_bytes = t->actual_num_bytes;
+        xSemaphoreGive(c->sem);
+    };
+
+    uint32_t start = millis();
+    last_report_descriptor_info_ = "declared " + std::to_string(desc_len) + " bytes";
+    ret = usb_host_transfer_submit_control(device_.client_hdl, transfer);
+    if (ret == ESP_OK) {
+        // Large descriptors from low-speed devices take a while. Wait in short
+        // slices so the main loop watchdog keeps being fed.
+        bool done = false;
+        while (!done && millis() - start < 10000) {
+            done = xSemaphoreTake(done_sem, pdMS_TO_TICKS(200)) == pdTRUE;
+            App.feed_wdt();
+        }
+        uint32_t elapsed = millis() - start;
+        last_report_descriptor_info_ += ", " + std::to_string(elapsed) + " ms";
+        if (done) {
+            ret = ctx.result;
+            last_report_descriptor_info_ += ", status " + std::to_string(static_cast<int>(ctx.result)) + ", got " +
+                                            std::to_string(ctx.actual_bytes);
+            if (ret == ESP_OK && ctx.actual_bytes > sizeof(usb_setup_packet_t)) {
+                const uint8_t *d = transfer->data_buffer + sizeof(usb_setup_packet_t);
+                result.assign(d, d + (ctx.actual_bytes - sizeof(usb_setup_packet_t)));
+                ESP_LOGI(ESP32_USB_TAG, "HID report descriptor: %zu bytes (declared %u) in %u ms", result.size(),
+                         desc_len, elapsed);
+            } else if (ret == ESP_OK) {
+                ret = ESP_FAIL;
+            }
+        } else {
+            // The callback uses ctx on this stack: make it harmless and leak.
+            ESP_LOGE(ESP32_USB_TAG, "HID report descriptor request stuck, leaking transfer");
+            transfer->callback = [](usb_transfer_t *) {};
+            return ESP_ERR_TIMEOUT;
+        }
+    } else {
+        last_report_descriptor_info_ += ", submit failed";
+    }
+    if (ret != ESP_OK)
+        ESP_LOGW(ESP32_USB_TAG, "HID report descriptor request failed: %s", esp_err_to_name(ret));
+
     vSemaphoreDelete(done_sem);
     usb_host_transfer_free(transfer);
     return ret;

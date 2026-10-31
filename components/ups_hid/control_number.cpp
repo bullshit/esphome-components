@@ -1,3 +1,5 @@
+#include "esphome/core/defines.h"
+#ifdef USE_NUMBER
 #include "control_number.h"
 #include "esphome/core/log.h"
 
@@ -71,3 +73,4 @@ const char *UpsDelayNumber::delay_type_to_string() const {
 
 }  // namespace ups_hid
 }  // namespace esphome
+#endif  // USE_NUMBER

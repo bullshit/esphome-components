@@ -1,4 +1,6 @@
 #pragma once
+#include "esphome/core/defines.h"
+#ifdef USE_BUTTON
 
 #include "esphome/core/component.h"
 #include "esphome/components/button/button.h"
@@ -46,3 +48,4 @@ class UpsHidButton : public button::Button, public Component {
 
 }  // namespace ups_hid
 }  // namespace esphome
+#endif  // USE_BUTTON
