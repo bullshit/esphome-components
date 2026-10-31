@@ -21,12 +21,22 @@ ProtocolFactory::get_fallback_registry() {
     return fallback_registry;
 }
 
+// The protocol implementations self-register via static objects. ESPHome
+// links component sources from a static library, so unreferenced protocol
+// objects (and their registrars) get dropped. Reference them to force linking.
+std::unique_ptr<UpsProtocolBase> create_generic_protocol(UpsHidComponent* parent);
+std::unique_ptr<UpsProtocolBase> create_apc_protocol(UpsHidComponent* parent);
+std::unique_ptr<UpsProtocolBase> create_cyberpower_protocol(UpsHidComponent* parent);
+using ProtocolCreatorFn = std::unique_ptr<UpsProtocolBase> (*)(UpsHidComponent*);
+static ProtocolCreatorFn volatile protocol_link_anchors[] = {
+    &create_generic_protocol, &create_apc_protocol, &create_cyberpower_protocol};
+
 void ProtocolFactory::ensure_initialized() {
+    (void) protocol_link_anchors[0];
     // Registries are initialized on first access due to static storage
     // This function exists for explicit initialization if needed
     static bool initialized = false;
     if (!initialized) {
-        ESP_LOGD(FACTORY_TAG, "Protocol factory registries initialized");
         initialized = true;
     }
 }
@@ -44,8 +54,8 @@ void ProtocolFactory::register_protocol_for_vendor(uint16_t vendor_id,
                   return a.priority > b.priority;
               });
     
-    ESP_LOGI(FACTORY_TAG, "Registered protocol '%s' for vendor 0x%04X (priority %d)", 
-             info.name.c_str(), vendor_id, info.priority);
+    // No logging here: this runs from static initializers, before the
+    // ESPHome logger exists (logging then dereferences a null logger).
 }
 
 void ProtocolFactory::register_fallback_protocol(const ProtocolInfo& info) {
@@ -60,8 +70,7 @@ void ProtocolFactory::register_fallback_protocol(const ProtocolInfo& info) {
                   return a.priority > b.priority;
               });
     
-    ESP_LOGI(FACTORY_TAG, "Registered fallback protocol '%s' (priority %d)", 
-             info.name.c_str(), info.priority);
+    // No logging here: runs from static initializers (see above).
 }
 
 std::unique_ptr<UpsProtocolBase> 
