@@ -1,3 +1,5 @@
+#include "esphome/core/defines.h"
+#ifdef USE_BINARY_SENSOR
 #include "sensor_binary.h"
 #include "esphome/core/log.h"
 
@@ -14,3 +16,5 @@ void UpsHidBinarySensor::dump_config() {
 
 }  // namespace ups_hid
 }  // namespace esphome
+
+#endif  // USE_BINARY_SENSOR

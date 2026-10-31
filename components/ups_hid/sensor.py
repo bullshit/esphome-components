@@ -133,14 +133,27 @@ SENSOR_TYPES = {
 }
 
 
-CONFIG_SCHEMA = sensor.sensor_schema(
-    UpsHidSensor,
-    accuracy_decimals=1,
-).extend(
-    {
-        cv.GenerateID(CONF_UPS_HID_ID): cv.use_id(UpsHidComponent),
-        cv.Required(CONF_TYPE): cv.one_of(*SENSOR_TYPES, lower=True),
-    }
+def _apply_type_defaults(config):
+    # ESPHome no longer has set_unit_of_measurement()/set_device_class(), so
+    # fill the per-type defaults into the config for new_sensor() to apply.
+    defaults = SENSOR_TYPES.get(config[CONF_TYPE], {})
+    config = config.copy()
+    if "unit" in defaults:
+        config.setdefault("unit_of_measurement", defaults["unit"])
+    if "device_class" in defaults:
+        config.setdefault("device_class", defaults["device_class"])
+    config.setdefault("accuracy_decimals", defaults.get("accuracy_decimals", 1))
+    return config
+
+
+CONFIG_SCHEMA = cv.All(
+    sensor.sensor_schema(UpsHidSensor).extend(
+        {
+            cv.GenerateID(CONF_UPS_HID_ID): cv.use_id(UpsHidComponent),
+            cv.Required(CONF_TYPE): cv.one_of(*SENSOR_TYPES, lower=True),
+        }
+    ),
+    _apply_type_defaults,
 )
 
 
@@ -153,16 +166,3 @@ async def to_code(config):
     cg.add(var.set_sensor_type(sensor_type))
     cg.add(parent.register_sensor(var, sensor_type))
 
-    # Apply sensor type specific configuration
-    if sensor_type in SENSOR_TYPES:
-        sensor_config = SENSOR_TYPES[sensor_type]
-
-        # Override config with sensor type defaults if not specified
-        if "unit_of_measurement" not in config and "unit" in sensor_config:
-            cg.add(var.set_unit_of_measurement(sensor_config["unit"]))
-
-        if "device_class" not in config and "device_class" in sensor_config:
-            cg.add(var.set_device_class(sensor_config["device_class"]))
-
-        if "accuracy_decimals" not in config and "accuracy_decimals" in sensor_config:
-            cg.add(var.set_accuracy_decimals(sensor_config["accuracy_decimals"]))

@@ -1,3 +1,5 @@
+#include "esphome/core/defines.h"
+#ifdef USE_TEXT_SENSOR
 #include "sensor_text.h"
 #include "esphome/core/log.h"
 
@@ -17,3 +19,5 @@ namespace esphome
 
   } // namespace ups_hid
 } // namespace esphome
+
+#endif  // USE_TEXT_SENSOR
