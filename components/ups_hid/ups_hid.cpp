@@ -1,4 +1,5 @@
 #include "ups_hid.h"
+#include "protocol_eaton.h"
 #include "constants_ups.h"
 #include "transport_factory.h"
 #include "transport_simulation.h"
@@ -88,6 +89,7 @@ void UpsHidComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Protocol Timeout: %u ms", protocol_timeout_ms_);
   ESP_LOGCONFIG(TAG, "  Protocol Selection: %s", protocol_selection_.c_str());
   ESP_LOGCONFIG(TAG, "  Update Interval: %u ms", get_update_interval());
+  ESP_LOGCONFIG(TAG, "  Eaton/MGE probe: %s", eaton_probe_status().c_str());
 
   if (transport_ && transport_->is_connected()) {
     ESP_LOGCONFIG(TAG, "  Status: %s", status::CONNECTED);
@@ -136,6 +138,13 @@ esp_err_t UpsHidComponent::get_string_descriptor(uint8_t string_index, std::stri
     return ESP_ERR_INVALID_STATE;
   }
   return transport_->get_string_descriptor(string_index, result);
+}
+
+esp_err_t UpsHidComponent::get_report_descriptor(std::vector<uint8_t>& result) {
+  if (!transport_) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  return transport_->get_report_descriptor(result);
 }
 
 bool UpsHidComponent::is_connected() const {

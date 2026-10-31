@@ -27,9 +27,10 @@ ProtocolFactory::get_fallback_registry() {
 std::unique_ptr<UpsProtocolBase> create_generic_protocol(UpsHidComponent* parent);
 std::unique_ptr<UpsProtocolBase> create_apc_protocol(UpsHidComponent* parent);
 std::unique_ptr<UpsProtocolBase> create_cyberpower_protocol(UpsHidComponent* parent);
+std::unique_ptr<UpsProtocolBase> create_eaton_protocol(UpsHidComponent* parent);
 using ProtocolCreatorFn = std::unique_ptr<UpsProtocolBase> (*)(UpsHidComponent*);
 static ProtocolCreatorFn volatile protocol_link_anchors[] = {
-    &create_generic_protocol, &create_apc_protocol, &create_cyberpower_protocol};
+    &create_generic_protocol, &create_apc_protocol, &create_cyberpower_protocol, &create_eaton_protocol};
 
 void ProtocolFactory::ensure_initialized() {
     (void) protocol_link_anchors[0];

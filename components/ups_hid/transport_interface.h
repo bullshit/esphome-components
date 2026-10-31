@@ -41,6 +41,14 @@ public:
     // String descriptors
     virtual esp_err_t get_string_descriptor(uint8_t string_index, 
                                           std::string& result) = 0;
+
+    virtual std::string get_report_descriptor_info() const { return ""; }
+
+    // HID report descriptor of the claimed interface (optional)
+    virtual esp_err_t get_report_descriptor(std::vector<uint8_t>& result) {
+        result.clear();
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     
     // Error information
     virtual std::string get_last_error() const = 0;

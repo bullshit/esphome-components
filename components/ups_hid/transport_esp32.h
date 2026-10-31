@@ -44,6 +44,9 @@ public:
     
     esp_err_t get_string_descriptor(uint8_t string_index, 
                                   std::string& result) override;
+
+    esp_err_t get_report_descriptor(std::vector<uint8_t>& result) override;
+    std::string get_report_descriptor_info() const override { return last_report_descriptor_info_; }
     
     std::string get_last_error() const override;
 
@@ -64,6 +67,7 @@ private:
     };
     
     UsbDevice device_;
+    std::string last_report_descriptor_info_;
     mutable std::mutex device_mutex_;
     std::atomic<bool> connected_{false};
     std::atomic<bool> initialized_{false};
